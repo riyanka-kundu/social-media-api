@@ -18,16 +18,23 @@ export class UsersService {
       where: {
         id: user.id,
       },
-      select: {
-        authTokens: false,
-        password: false,
-        posts: false,
-      },
+      select: [
+        'id',
+        'email',
+        'name',
+        'profilePicture',
+        'createdAt',
+        'dateOfBirth',
+        'gender',
+        'updatedAt',
+      ],
     });
     if (!currentUser) throw new NotFoundException('User not found!');
     return {
       message: 'Profile retrieved successfully!',
-      data: user,
+      data: {
+        user: currentUser,
+      },
     };
   }
 
@@ -77,6 +84,16 @@ export class UsersService {
       where: {
         id: user.id,
       },
+      select: [
+        'id',
+        'email',
+        'name',
+        'profilePicture',
+        'createdAt',
+        'dateOfBirth',
+        'gender',
+        'updatedAt',
+      ],
     });
 
     if (!updatedUser) throw new NotFoundException('Failed to update user!');
