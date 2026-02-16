@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpStatus,
   Param,
@@ -151,6 +152,8 @@ export class PostsController {
   }
 
   @Version('1')
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a post' })
   remove(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @LoginUser() user: Partial<User>,
