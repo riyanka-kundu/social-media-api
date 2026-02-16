@@ -44,6 +44,7 @@ export class FeedController {
     default: 10,
   })
   findAll(
+    @LoginUser() user: User,
     @Query(
       'page',
       new ParseIntPipe({
@@ -61,14 +62,21 @@ export class FeedController {
     )
     limit?: number,
   ) {
-    return this.feedService.getFeed({ page: page ?? 1, limit: limit ?? 10 });
+    return this.feedService.getFeed({
+      page: page ?? 1,
+      limit: limit ?? 10,
+      userId: user.id,
+    });
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a single post' })
   @Version('1')
-  findOne(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
-    return this.feedService.findOne(id);
+  findOne(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @LoginUser() user: User,
+  ) {
+    return this.feedService.findOne(id, user.id);
   }
 
   @Patch(':id/like')

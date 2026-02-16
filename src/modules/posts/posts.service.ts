@@ -5,12 +5,13 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 
 import { CONSTANTS } from '@/common/constants';
 import { PostSortField, SortOrder } from '@/common/enum';
 import { CreatePostDto } from '@/modules/posts/dto/create-post.dto';
 import { UpdatePostDto } from '@/modules/posts/dto/update-post.dto';
+import { PostLike } from '@/modules/posts/entities/post-like.entity';
 import { Post } from '@/modules/posts/entities/post.entity';
 import { User } from '@/modules/users/entities/user.entity';
 
@@ -19,6 +20,9 @@ export class PostsService {
   constructor(
     @InjectRepository(Post)
     private readonly postsRepository: Repository<Post>,
+
+    @InjectRepository(PostLike)
+    private readonly postLikeRepository: Repository<PostLike>,
 
     private readonly configService: ConfigService,
   ) {}
@@ -93,6 +97,20 @@ export class PostsService {
       },
     });
 
+    const postIds = posts.map((post) => post.id);
+    const likedPosts = postIds.length
+      ? await this.postLikeRepository.find({
+          where: { user: { id: user.id }, post: { id: In(postIds) } },
+          relations: ['post'],
+        })
+      : [];
+    const likedPostIds = new Set(likedPosts.map((like) => like.post.id));
+
+    const docsWithIsLiked = posts.map((post) => ({
+      ...post,
+      isLiked: likedPostIds.has(post.id),
+    }));
+
     const totalPages = Math.ceil(total / limit);
 
     return {
@@ -108,7 +126,7 @@ export class PostsService {
           sortBy,
           sortOrder,
         },
-        docs: posts,
+        docs: docsWithIsLiked,
       },
     };
   }
@@ -131,9 +149,13 @@ export class PostsService {
 
     if (!post) throw new NotFoundException('Post not found!');
 
+    const existingLike = await this.postLikeRepository.findOne({
+      where: { user: { id: user.id }, post: { id } },
+    });
+
     return {
       message: 'Post retrieved successfully!',
-      data: post,
+      data: { ...post, isLiked: !!existingLike },
     };
   }
 
